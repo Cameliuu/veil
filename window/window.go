@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"syscall"
+	"time"
 
 	"github.com/Cameliuu/veil/win32"
 	"golang.org/x/sys/windows"
@@ -23,8 +24,6 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		win32.PostQuitMessage()
 		return 0
 	case win32.WMsg.WmTimer:
-		fmt.Println("timer tick")
-
 		//invalidate rect - this will mark window as dirty and trigger WmPaint
 		win32.InvalidateRect(windows.HWND(hwnd))
 		return 0
@@ -60,19 +59,20 @@ func Run(targetTitle string, callback func(hdc uintptr)) {
 
 	//TO-DO ACTUALLY CONFIG THE FPS
 	isTimerSet, err := win32.SetTimer(window.hWnd, 1, 1000/60)
+
 	if !isTimerSet {
 		log.Fatalf("veil: could not set timer %v", err)
 	}
 
 	var m win32.Msg
 	for {
-		isMsgSuccessful, err := win32.GetMessage(&m)
-		if !isMsgSuccessful {
-			log.Fatalf("veil: message cannot be proccesed: %v", err)
-			break
+		if win32.PeekMessage(&m) {
+			if m.Message == 0x0012 { // WM_QUIT
+				break
+			}
+			win32.DispatchMessage(&m)
 		}
-
-		win32.DispatchMessage(&m)
+		time.Sleep(1 * time.Millisecond)
 	}
 }
 

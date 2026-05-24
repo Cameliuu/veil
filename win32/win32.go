@@ -73,6 +73,7 @@ var (
 	procUpdateWindow               = user32DLL.NewProc("UpdateWindow")
 	procSetTimer                   = user32DLL.NewProc("SetTimer")
 	procGetMessage                 = user32DLL.NewProc("GetMessageW")
+	procPeekMessageW               = user32DLL.NewProc("PeekMessageW")
 	procDispatchMessageW           = user32DLL.NewProc("DispatchMessageW")
 	procInvalidateRect             = user32DLL.NewProc("InvalidateRect")
 	procBeginPaint                 = user32DLL.NewProc("BeginPaint")
@@ -181,6 +182,14 @@ func EndPaint(hWnd windows.HWND, paint *PaintStruct) {
 	procEndPaint.Call(uintptr(hWnd), uintptr(unsafe.Pointer(paint)))
 }
 
+func PeekMessage(msg *Msg) bool {
+	r, _, _ := procPeekMessageW.Call(
+		uintptr(unsafe.Pointer(msg)),
+		0, 0, 0,
+		1,
+	)
+	return r != 0
+}
 func GetMessage(msg *Msg) (bool, error) {
 	r, _, err := procGetMessage.Call(uintptr(unsafe.Pointer(msg)), 0, 0, 0)
 
