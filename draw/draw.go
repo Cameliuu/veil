@@ -11,7 +11,7 @@ type Color struct {
 }
 
 func (c Color) ToBGR() uintptr {
-	return uintptr(c.B) | uintptr(c.G)<<8 | uintptr(c.R)<<16
+	return uintptr(c.R) | uintptr(c.G)<<8 | uintptr(c.B)<<16
 }
 
 var (

@@ -19,7 +19,7 @@ func callback(hdc uintptr) {
 		Right:  60,
 		Bottom: 120,
 	},
-		draw.Green)
+		draw.Red)
 }
 func main() {
 
