@@ -3,6 +3,7 @@ package window
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -52,6 +53,7 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 }
 
 func Run(targetTitle string, callback func(hdc uintptr)) {
+	runtime.LockOSThread()
 	onPaint = callback
 	window, err := New(targetTitle)
 
