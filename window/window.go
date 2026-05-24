@@ -34,6 +34,10 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 			log.Printf("veil: Could not get handle to device context :%v", err)
 		}
 
+		clientRect := win32.GetClientRect(uintptr(hwnd))
+		brush := win32.CreateSolidBrush(win32.ColorKey)
+		win32.FillRect(hdc, &clientRect, brush)
+		win32.DeleteObject(brush)
 		if onPaint != nil {
 			onPaint(hdc)
 		}
@@ -93,6 +97,8 @@ func New(targetTitle string) (*Window, error) {
 	if err != nil {
 		return nil, err
 	}
+	win32.SetWindowPos(hwnd, win32.HwndTopmost, 0, 0, 0, 0, win32.SwpNoSize|win32.SwpNoMove|win32.SwpNoActivate)
+	win32.SetLayeredWindowAttributes(hwnd, win32.ColorKey, 0, win32.LwaColorKey)
 
 	return &Window{
 		hWnd:   windows.HWND(hwnd),

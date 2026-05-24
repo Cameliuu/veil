@@ -60,23 +60,101 @@ type WndClassEx struct {
 const className = "veil_overlay_class"
 
 var (
-	user32DLL            = windows.NewLazyDLL("user32.DLL")
-	procFindWindowW      = user32DLL.NewProc("FindWindowW")
-	procGetWindowRect    = user32DLL.NewProc("GetWindowRect")
-	procRegisterClassEx  = user32DLL.NewProc("RegisterClassExW")
-	procCreateWindowExW  = user32DLL.NewProc("CreateWindowExW")
-	procPostQuitMessage  = user32DLL.NewProc("PostQuitMessage")
-	procDefWindowProcW   = user32DLL.NewProc("DefWindowProcW")
-	procShowWindow       = user32DLL.NewProc("ShowWindow")
-	procUpdateWindow     = user32DLL.NewProc("UpdateWindow")
-	procSetTimer         = user32DLL.NewProc("SetTimer")
-	procGetMessage       = user32DLL.NewProc("GetMessageW")
-	procDispatchMessageW = user32DLL.NewProc("DispatchMessageW")
-	procInvalidateRect   = user32DLL.NewProc("InvalidateRect")
-	procBeginPaint       = user32DLL.NewProc("BeginPaint")
-	procEndPaint         = user32DLL.NewProc("EndPaint")
+	user32DLL                      = windows.NewLazyDLL("user32.DLL")
+	gdiDLL                         = windows.NewLazyDLL("gdi32.dll")
+	procFindWindowW                = user32DLL.NewProc("FindWindowW")
+	procGetWindowRect              = user32DLL.NewProc("GetWindowRect")
+	procGetClientRect              = user32DLL.NewProc("GetClientRect")
+	procRegisterClassEx            = user32DLL.NewProc("RegisterClassExW")
+	procCreateWindowExW            = user32DLL.NewProc("CreateWindowExW")
+	procPostQuitMessage            = user32DLL.NewProc("PostQuitMessage")
+	procDefWindowProcW             = user32DLL.NewProc("DefWindowProcW")
+	procShowWindow                 = user32DLL.NewProc("ShowWindow")
+	procUpdateWindow               = user32DLL.NewProc("UpdateWindow")
+	procSetTimer                   = user32DLL.NewProc("SetTimer")
+	procGetMessage                 = user32DLL.NewProc("GetMessageW")
+	procDispatchMessageW           = user32DLL.NewProc("DispatchMessageW")
+	procInvalidateRect             = user32DLL.NewProc("InvalidateRect")
+	procBeginPaint                 = user32DLL.NewProc("BeginPaint")
+	procEndPaint                   = user32DLL.NewProc("EndPaint")
+	procRectangle                  = gdiDLL.NewProc("Rectangle")
+	procFillRect                   = user32DLL.NewProc("FillRect")
+	procCreateSolidBrush           = gdiDLL.NewProc("CreateSolidBrush")
+	procDeleteObject               = gdiDLL.NewProc("DeleteObject")
+	procSelectObject               = gdiDLL.NewProc("SelectObject")
+	procGetStockObject             = gdiDLL.NewProc("GetStockObject")
+	procSetLayeredWindowAttributes = user32DLL.NewProc("SetLayeredWindowAttributes")
+	procSetWindowPos               = user32DLL.NewProc("SetWindowPos")
+	procCreatePen                  = gdiDLL.NewProc("CreatePen")
 )
 
+func SetWindowPos(hwnd, hwndInsertAfter uintptr, x, y, w, h int, flags uint32) {
+	procSetWindowPos.Call(
+		hwnd,
+		hwndInsertAfter,
+		uintptr(x),
+		uintptr(y),
+		uintptr(w),
+		uintptr(h),
+		uintptr(flags),
+	)
+}
+func SetLayeredWindowAttributes(hwnd, colorKey, alpha, flags uintptr) {
+	procSetLayeredWindowAttributes.Call(hwnd, colorKey, alpha, flags)
+}
+func DeleteObject(hObj uintptr) error {
+	r, _, err := procDeleteObject.Call(hObj)
+
+	if r == 0 {
+		return err
+	}
+	return nil
+}
+func CreatePen(color uintptr, width int) uintptr {
+	pen, _, _ := procCreatePen.Call(0, uintptr(width), color)
+	return pen
+}
+
+func SelectObject(hdc, obj uintptr) uintptr {
+	old, _, _ := procSelectObject.Call(hdc, obj)
+	return old
+}
+
+func GetNullBrush() uintptr {
+	brush, _, _ := procGetStockObject.Call(5)
+	return brush
+}
+func FillRect(hdc uintptr, rect *Rect, brush uintptr) error {
+
+	r, _, err := procFillRect.Call(hdc,
+		uintptr(unsafe.Pointer(rect)),
+		brush)
+	if r == 0 {
+		return err
+	}
+
+	return nil
+}
+func CreateSolidBrush(color uintptr) uintptr {
+	brush, _, _ := procCreateSolidBrush.Call(color)
+	return brush
+}
+func GetClientRect(hwnd uintptr) Rect {
+	var r Rect
+	procGetClientRect.Call(hwnd, uintptr(unsafe.Pointer(&r)))
+	return r
+}
+func Rectangle(hdc uintptr, rect Rect) error {
+	r, _, err := procRectangle.Call(hdc,
+		uintptr(rect.Left),
+		uintptr(rect.Top),
+		uintptr(rect.Right),
+		uintptr(rect.Bottom))
+	if r == 0 {
+		return err
+	}
+	return nil
+}
 func GetRect(hWnd uintptr) Rect {
 	var r Rect
 	procGetWindowRect.Call(hWnd, uintptr(unsafe.Pointer(&r)))
@@ -153,8 +231,8 @@ const (
 	wsExNoActivate  = 0x08000000
 	wsPopup         = 0x80000000
 
-	lwaColorKey = 0x00000001
-	colorKey    = 0x00FF00FF
+	LwaColorKey = 0x00000001
+	ColorKey    = 0x00FF00FF
 
 	wmDestroy = 0x0002
 	wmPaint   = 0x000F
@@ -163,6 +241,13 @@ const (
 	timerID   = 1
 	nullBrush = 5
 	idcArrow  = 32512
+)
+const (
+	HwndTopmost   = ^uintptr(0)                   // -1, always on top
+	HwndNoTopmost = uintptr(18446744073709551614) // -2, removes topmost
+	SwpNoSize     = 0x0001
+	SwpNoMove     = 0x0002
+	SwpNoActivate = 0x0010
 )
 
 func CreateWindowEx(exStyle uint32, className, windowName *uint16, style uint32, x, y, w, h int, instance windows.Handle) (uintptr, error) {
