@@ -7,8 +7,18 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+type Point struct{ X, Y int32 }
+
 type Rect struct {
 	Left, Top, Right, Bottom int32
+}
+type Msg struct {
+	Hwnd    uintptr
+	Message uint32
+	WParam  uintptr
+	LParam  uintptr
+	Time    uint32
+	Pt      Point
 }
 
 type Messages struct {
@@ -17,10 +27,19 @@ type Messages struct {
 	WmTimer   uint32
 }
 
-var Msg = Messages{
+var WMsg = Messages{
 	WmDestroy: 0x0002,
 	WmPaint:   0x000F,
 	WmTimer:   0x0113,
+}
+
+type PaintStruct struct {
+	Hdc       uintptr
+	Erase     int32
+	RcPaint   [4]int32
+	Restore   int32
+	IncUpdate int32
+	Reserved  [32]byte
 }
 
 type WndClassEx struct {
@@ -41,15 +60,21 @@ type WndClassEx struct {
 const className = "veil_overlay_class"
 
 var (
-	user32DLL           = windows.NewLazyDLL("user32.DLL")
-	procFindWindowW     = user32DLL.NewProc("FindWindowW")
-	procGetWindowRect   = user32DLL.NewProc("GetWindowRect")
-	procRegisterClassEx = user32DLL.NewProc("RegisterClassExW")
-	procCreateWindowExW = user32DLL.NewProc("CreateWindowExW")
-	procPostQuitMessage = user32DLL.NewProc("PostQuitMessage")
-	procDefWindowProcW  = user32DLL.NewProc("DefWindowProcW")
-	procShowWindow      = user32DLL.NewProc("ShowWindow")
-	procUpdateWindow    = user32DLL.NewProc("UpdateWindow")
+	user32DLL            = windows.NewLazyDLL("user32.DLL")
+	procFindWindowW      = user32DLL.NewProc("FindWindowW")
+	procGetWindowRect    = user32DLL.NewProc("GetWindowRect")
+	procRegisterClassEx  = user32DLL.NewProc("RegisterClassExW")
+	procCreateWindowExW  = user32DLL.NewProc("CreateWindowExW")
+	procPostQuitMessage  = user32DLL.NewProc("PostQuitMessage")
+	procDefWindowProcW   = user32DLL.NewProc("DefWindowProcW")
+	procShowWindow       = user32DLL.NewProc("ShowWindow")
+	procUpdateWindow     = user32DLL.NewProc("UpdateWindow")
+	procSetTimer         = user32DLL.NewProc("SetTimer")
+	procGetMessage       = user32DLL.NewProc("GetMessageW")
+	procDispatchMessageW = user32DLL.NewProc("DispatchMessageW")
+	procInvalidateRect   = user32DLL.NewProc("InvalidateRect")
+	procBeginPaint       = user32DLL.NewProc("BeginPaint")
+	procEndPaint         = user32DLL.NewProc("EndPaint")
 )
 
 func GetRect(hWnd uintptr) Rect {
@@ -58,6 +83,38 @@ func GetRect(hWnd uintptr) Rect {
 	return r
 }
 
+func InvalidateRect(hWnd windows.HWND) {
+	procInvalidateRect.Call(uintptr(hWnd),
+		0,
+		1)
+}
+
+func BeginPaint(hWnd windows.HWND, paint *PaintStruct) (uintptr, error) {
+	hdc, _, err := procBeginPaint.Call(uintptr(hWnd),
+		uintptr(unsafe.Pointer(paint)))
+	if hdc == 0 {
+		return 0, err
+	}
+
+	return hdc, nil
+}
+
+func EndPaint(hWnd windows.HWND, paint *PaintStruct) {
+	procEndPaint.Call(uintptr(hWnd), uintptr(unsafe.Pointer(paint)))
+}
+
+func GetMessage(msg *Msg) (bool, error) {
+	r, _, err := procGetMessage.Call(uintptr(unsafe.Pointer(msg)), 0, 0, 0)
+
+	if r == ^uintptr(0) {
+		return false, err
+	}
+
+	return true, nil
+}
+func DispatchMessage(msg *Msg) {
+	procDispatchMessageW.Call(uintptr(unsafe.Pointer(msg)))
+}
 func RegisterClassEx(wc *WndClassEx) (bool, error) {
 	atom, _, err := procRegisterClassEx.Call(uintptr(unsafe.Pointer(wc)))
 
@@ -71,6 +128,19 @@ func PostQuitMessage() {
 	procPostQuitMessage.Call(0)
 }
 
+func SetTimer(hWnd windows.HWND, idEvent uint32, elapsedTime uint32) (bool, error) {
+	isTimerSet, _, err := procSetTimer.Call(
+		uintptr(hWnd),
+		uintptr(idEvent),
+		uintptr(elapsedTime),
+	)
+
+	if isTimerSet == 0 {
+		return false, err
+	}
+
+	return true, nil
+}
 func DefWindowProc(hwnd, msg, wp, lp uintptr) uintptr {
 	r, _, _ := procDefWindowProcW.Call(hwnd, msg, wp, lp)
 	return r
@@ -160,10 +230,10 @@ func FindWindow(title string) uintptr {
 	hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(p)))
 	return hwnd
 }
-func ShowWindow(hwnd uintptr) {
-	procShowWindow.Call(hwnd, 5) // 5 = SW_SHOW
+func ShowWindow(hwnd windows.HWND) {
+	procShowWindow.Call(uintptr(hwnd), 5) // 5 = SW_SHOW
 }
 
-func UpdateWindow(hwnd uintptr) {
-	procUpdateWindow.Call(hwnd)
+func UpdateWindow(hwnd windows.HWND) {
+	procUpdateWindow.Call(uintptr(hwnd))
 }
