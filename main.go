@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/Cameliuu/veil/draw"
 	"github.com/Cameliuu/veil/win32"
 	"github.com/Cameliuu/veil/window"
@@ -9,6 +11,8 @@ import (
 var frameCount int
 
 func callback(hdc uintptr) {
+	frameCount++
+	fmt.Println("draw frame:", frameCount)
 	draw.Box(hdc, win32.Rect{
 		Left:   300,
 		Top:    200,

@@ -192,12 +192,10 @@ func PeekMessage(msg *Msg) bool {
 }
 func GetMessage(msg *Msg) (bool, error) {
 	r, _, err := procGetMessage.Call(uintptr(unsafe.Pointer(msg)), 0, 0, 0)
-
-	if r == ^uintptr(0) {
+	if r == ^uintptr(0) { // -1 = real error
 		return false, err
 	}
-
-	return true, nil
+	return r != 0, nil // 0 = WM_QUIT, non-zero = normal message
 }
 func DispatchMessage(msg *Msg) {
 	procDispatchMessageW.Call(uintptr(unsafe.Pointer(msg)))

@@ -3,8 +3,8 @@ package window
 import (
 	"fmt"
 	"log"
-	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/Cameliuu/veil/win32"
 	"golang.org/x/sys/windows"
@@ -31,6 +31,10 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		var ps win32.PaintStruct
 		hdc, err := win32.BeginPaint(windows.HWND(hwnd), &ps)
 		defer win32.EndPaint(windows.HWND(hwnd), &ps)
+
+		if hdc == 0 {
+			return 0
+		}
 		if err != nil {
 			log.Printf("veil: Could not get handle to device context :%v", err)
 		}
@@ -71,8 +75,9 @@ func Run(targetTitle string, callback func(hdc uintptr)) {
 				break
 			}
 			win32.DispatchMessage(&m)
+		} else {
+			time.Sleep(1 * time.Millisecond)
 		}
-		runtime.Gosched()
 	}
 }
 
