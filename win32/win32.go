@@ -120,7 +120,10 @@ func SelectObject(hdc, obj uintptr) uintptr {
 	old, _, _ := procSelectObject.Call(hdc, obj)
 	return old
 }
-
+func GetNullPen() uintptr {
+	brush, _, _ := procGetStockObject.Call(8)
+	return brush
+}
 func GetNullBrush() uintptr {
 	brush, _, _ := procGetStockObject.Call(5)
 	return brush
