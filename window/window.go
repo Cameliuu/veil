@@ -23,6 +23,8 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		win32.PostQuitMessage()
 		return 0
 	case win32.WMsg.WmTimer:
+		fmt.Println("timer tick")
+
 		//invalidate rect - this will mark window as dirty and trigger WmPaint
 		win32.InvalidateRect(windows.HWND(hwnd))
 		return 0
@@ -48,7 +50,7 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 
 func Run(targetTitle string, callback func(hdc uintptr)) {
 	onPaint = callback
-	window, err := New("AssaultCube")
+	window, err := New(targetTitle)
 
 	if err != nil {
 		log.Fatal(err)

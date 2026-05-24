@@ -21,6 +21,6 @@ func callback(hdc uintptr) {
 }
 func main() {
 
-	window.Run("veil", callback)
+	window.Run("AssaultCube", callback)
 
 }
