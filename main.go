@@ -1,16 +1,14 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/Cameliuu/veil/draw"
 	"github.com/Cameliuu/veil/win32"
 	"github.com/Cameliuu/veil/window"
 )
 
-func callback(hdc uintptr) {
-	fmt.Println("onPaint called, hdc:", hdc)
+var frameCount int
 
+func callback(hdc uintptr) {
 	draw.Box(hdc, win32.Rect{
 		Left:   300,
 		Top:    200,

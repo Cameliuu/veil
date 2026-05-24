@@ -3,8 +3,8 @@ package window
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"syscall"
-	"time"
 
 	"github.com/Cameliuu/veil/win32"
 	"golang.org/x/sys/windows"
@@ -72,7 +72,7 @@ func Run(targetTitle string, callback func(hdc uintptr)) {
 			}
 			win32.DispatchMessage(&m)
 		}
-		time.Sleep(1 * time.Millisecond)
+		runtime.Gosched()
 	}
 }
 
