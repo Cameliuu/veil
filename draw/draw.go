@@ -87,6 +87,42 @@ func TextOut(hdc uintptr, text string, x, y int32, Color Color) {
 		y)
 
 }
+func Box3D(hdc uintptr, rect win32.Rect, c Color, depth int) {
+	pen := win32.CreatePen(c.ToBGR(), 2)
+	defer win32.DeleteObject(pen)
+
+	oldPen := win32.SelectObject(hdc, pen)
+	defer win32.SelectObject(hdc, oldPen)
+
+	x1, y1 := rect.Left, rect.Top
+	x2, y2 := rect.Right, rect.Bottom
+
+	dx := int32(depth)
+	dy := int32(depth)
+
+	bx1, by1 := x1-dx, y1-dy
+	bx2, by2 := x2-dx, y2-dy
+
+	drawLine := func(xa, ya, xb, yb int32) {
+		win32.MoveToEx(hdc, win32.Point{X: xa, Y: ya})
+		win32.LineTo(hdc, win32.Point{X: xb, Y: yb})
+	}
+
+	drawLine(x1, y1, x2, y1)
+	drawLine(x2, y1, x2, y2)
+	drawLine(x2, y2, x1, y2)
+	drawLine(x1, y2, x1, y1)
+
+	drawLine(bx1, by1, bx2, by1)
+	drawLine(bx2, by1, bx2, by2)
+	drawLine(bx2, by2, bx1, by2)
+	drawLine(bx1, by2, bx1, by1)
+
+	drawLine(x1, y1, bx1, by1)
+	drawLine(x2, y1, bx2, by1)
+	drawLine(x2, y2, bx2, by2)
+	drawLine(x1, y2, bx1, by2)
+}
 
 func FilledBox(hdc uintptr, rect win32.Rect, c Color) {
 	brush := win32.CreateSolidBrush(c.ToBGR())

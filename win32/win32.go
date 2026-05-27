@@ -106,8 +106,30 @@ var (
 	procTextOut                    = gdiDLL.NewProc("TextOutW")
 	procSetBkMode                  = gdiDLL.NewProc("SetBkMode")
 	procSetTextColor               = gdiDLL.NewProc("SetTextColor")
+	procLineTo                     = gdiDLL.NewProc("LineTo")
+	procMoveToEx                   = gdiDLL.NewProc("MoveToEx")
 )
 
+func MoveToEx(hdc uintptr, point Point) error {
+	r, _, err := procMoveToEx.Call(
+		hdc,
+		uintptr(point.X),
+		uintptr(point.Y),
+		0,
+	)
+
+	if r == 0 {
+		return err
+	}
+	return nil
+}
+func LineTo(hdc uintptr, point Point) error {
+	r, _, err := procLineTo.Call(hdc, uintptr(point.X), uintptr(point.Y))
+	if r == 0 {
+		return err
+	}
+	return nil
+}
 func SetTextColor(hdc uintptr, color uintptr) error {
 	r, _, err := procSetTextColor.Call(hdc, color)
 

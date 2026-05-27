@@ -10,15 +10,13 @@ var frameCount int
 
 func callback(hdc uintptr) {
 	frameCount++
-	text := string("sadasdsa")
-	draw.TextOut(hdc, text, 500, 500)
-	draw.Box(hdc, win32.Rect{
-		Left:   300,
-		Top:    200,
-		Right:  60,
-		Bottom: 120,
-	},
-		draw.Red)
+
+	draw.Box3D(hdc, win32.Rect{
+		Left:   60,
+		Top:    120,
+		Right:  300,
+		Bottom: 200,
+	}, draw.Red, 10)
 }
 func main() {
 
