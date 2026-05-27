@@ -68,14 +68,14 @@ func Box(hdc uintptr, rect win32.Rect, c Color) {
 	}
 }
 
-func TextOut(hdc uintptr, text string, x, y int32) {
+func TextOut(hdc uintptr, text string, x, y int32, Color Color) {
 	err := win32.SetBkMode(hdc, win32.BK_TRANSPARENT)
 
 	if err != nil {
 		fmt.Printf("veil: could not set background mode %v", err)
 	}
 
-	err = win32.SetTextColor(hdc, Red.ToBGR())
+	err = win32.SetTextColor(hdc, Color.ToBGR())
 	if err != nil {
 		fmt.Printf("veil: could not set text color %v", err)
 	}
