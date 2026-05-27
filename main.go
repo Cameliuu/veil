@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/Cameliuu/veil/draw"
 	"github.com/Cameliuu/veil/win32"
 	"github.com/Cameliuu/veil/window"
@@ -19,7 +21,11 @@ func callback(hdc uintptr) {
 	}, draw.Red, 10)
 }
 func main() {
+	w, err := window.New("Counter-Strike")
 
-	window.Run("Counter-Strike", callback)
+	if err != nil {
+		log.Fatalf("veil: could not create window: %w", err)
+	}
 
+	w.Run(callback)
 }

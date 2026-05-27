@@ -24,10 +24,11 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 	case win32.WMsg.WmDestroy:
 		win32.PostQuitMessage()
 		return 0
+
 	case win32.WMsg.WmTimer:
-		//invalidate rect - this will mark window as dirty and trigger WmPaint
 		win32.InvalidateRect(windows.HWND(hwnd))
 		return 0
+
 	case win32.WMsg.WmPaint:
 		var ps win32.PaintStruct
 		hdc, err := win32.BeginPaint(windows.HWND(hwnd), &ps)
@@ -44,43 +45,15 @@ func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
 		brush := win32.CreateSolidBrush(win32.ColorKey)
 		win32.FillRect(hdc, &clientRect, brush)
 		win32.DeleteObject(brush)
+
 		if onPaint != nil {
 			onPaint(hdc)
 		}
+
 		return 0
 	}
+
 	return win32.DefWindowProc(hwnd, msg, wp, lp)
-}
-
-func Run(targetTitle string, callback func(hdc uintptr)) {
-	runtime.LockOSThread()
-	onPaint = callback
-	window, err := New(targetTitle)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	win32.ShowWindow(window.hWnd)
-	win32.UpdateWindow(window.hWnd)
-
-	//TO-DO ACTUALLY CONFIG THE FPS
-	isTimerSet, err := win32.SetTimer(window.hWnd, 1, 1000/60)
-
-	if !isTimerSet {
-		log.Fatalf("veil: could not set timer %v", err)
-	}
-
-	var m win32.Msg
-	for {
-		if win32.PeekMessage(&m) {
-			if m.Message == 0x0012 { // WM_QUIT
-				break
-			}
-			win32.DispatchMessage(&m)
-		} else {
-			time.Sleep(1 * time.Millisecond)
-		}
-	}
 }
 
 func New(targetTitle string) (*Window, error) {
@@ -92,9 +65,6 @@ func New(targetTitle string) (*Window, error) {
 	rect := win32.GetClientRect(gameWindow)
 	w := int(rect.Right - rect.Left)
 	h := int(rect.Bottom - rect.Top)
-
-	fmt.Printf("veil: game window rect: left=%d top=%d right=%d bottom=%d\n", rect.Left, rect.Top, rect.Right, rect.Bottom)
-	fmt.Printf("veil: game window size: %dx%d\n", w, h)
 
 	var instanceHandle windows.Handle
 	windows.GetModuleHandleEx(0, nil, &instanceHandle)
@@ -110,11 +80,9 @@ func New(targetTitle string) (*Window, error) {
 		return nil, err
 	}
 
-	overlayRect := win32.GetRect(hwnd)
-	fmt.Printf("veil: overlay rect: left=%d top=%d right=%d bottom=%d\n", overlayRect.Left, overlayRect.Top, overlayRect.Right, overlayRect.Bottom)
-	fmt.Printf("veil: overlay size: %dx%d\n", int(overlayRect.Right-overlayRect.Left), int(overlayRect.Bottom-overlayRect.Top))
+	win32.SetWindowPos(hwnd, win32.HwndTopmost, 0, 0, 0, 0,
+		win32.SwpNoSize|win32.SwpNoMove|win32.SwpNoActivate)
 
-	win32.SetWindowPos(hwnd, win32.HwndTopmost, 0, 0, 0, 0, win32.SwpNoSize|win32.SwpNoMove|win32.SwpNoActivate)
 	win32.SetLayeredWindowAttributes(hwnd, win32.ColorKey, 0, win32.LwaColorKey)
 
 	return &Window{
@@ -122,4 +90,30 @@ func New(targetTitle string) (*Window, error) {
 		width:  w,
 		height: h,
 	}, nil
+}
+
+func (w *Window) Run(callback func(hdc uintptr)) {
+	runtime.LockOSThread()
+
+	onPaint = callback
+
+	win32.ShowWindow(w.hWnd)
+	win32.UpdateWindow(w.hWnd)
+
+	_, err := win32.SetTimer(w.hWnd, 1, 1000/60)
+	if err != nil {
+		log.Fatalf("veil: could not set timer %v", err)
+	}
+
+	var m win32.Msg
+	for {
+		if win32.PeekMessage(&m) {
+			if m.Message == 0x0012 {
+				break
+			}
+			win32.DispatchMessage(&m)
+		} else {
+			time.Sleep(1 * time.Millisecond)
+		}
+	}
 }
