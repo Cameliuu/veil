@@ -17,6 +17,18 @@ type Window struct {
 	hWnd   windows.HWND
 }
 
+func (w *Window) Width() int {
+	return w.width
+}
+
+func (w *Window) Height() int {
+	return w.height
+}
+
+func (w *Window) Size() (int, int) {
+	return w.width, w.height
+}
+
 var onPaint func(hdc uintptr)
 
 func wndProc(hwnd, msg, wp, lp uintptr) uintptr {
