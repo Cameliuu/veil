@@ -78,6 +78,9 @@ func New(targetTitle string) (*Window, error) {
 	w := int(rect.Right - rect.Left)
 	h := int(rect.Bottom - rect.Top)
 
+	fmt.Printf("veil: game window rect: left=%d top=%d right=%d bottom=%d\n", rect.Left, rect.Top, rect.Right, rect.Bottom)
+	fmt.Printf("veil: game window size: %dx%d\n", w, h)
+
 	var instanceHandle windows.Handle
 	windows.GetModuleHandleEx(0, nil, &instanceHandle)
 

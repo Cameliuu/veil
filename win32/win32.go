@@ -383,10 +383,10 @@ func CreateWindow(title string, x, y, w, h int, wndProc uintptr, instanceHandle 
 		wsExLayered|
 			wsExTransparent|
 			wsExNoActivate|
-			wsExLayered,
+			wsExTopmost,
 		ptrToClassName,
 		ptrToTitle,
-		0,
+		wsPopup,
 		x,
 		y,
 		w,
