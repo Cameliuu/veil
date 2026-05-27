@@ -89,9 +89,12 @@ func New(targetTitle string) (*Window, error) {
 		return nil, fmt.Errorf("Could not find %q window", targetTitle)
 	}
 
-	rect := win32.GetRect(gameWindow)
+	rect := win32.GetClientRect(gameWindow)
 	w := int(rect.Right - rect.Left)
 	h := int(rect.Bottom - rect.Top)
+
+	fmt.Printf("veil: game window rect: left=%d top=%d right=%d bottom=%d\n", rect.Left, rect.Top, rect.Right, rect.Bottom)
+	fmt.Printf("veil: game window size: %dx%d\n", w, h)
 
 	var instanceHandle windows.Handle
 	windows.GetModuleHandleEx(0, nil, &instanceHandle)
@@ -106,6 +109,11 @@ func New(targetTitle string) (*Window, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	overlayRect := win32.GetRect(hwnd)
+	fmt.Printf("veil: overlay rect: left=%d top=%d right=%d bottom=%d\n", overlayRect.Left, overlayRect.Top, overlayRect.Right, overlayRect.Bottom)
+	fmt.Printf("veil: overlay size: %dx%d\n", int(overlayRect.Right-overlayRect.Left), int(overlayRect.Bottom-overlayRect.Top))
+
 	win32.SetWindowPos(hwnd, win32.HwndTopmost, 0, 0, 0, 0, win32.SwpNoSize|win32.SwpNoMove|win32.SwpNoActivate)
 	win32.SetLayeredWindowAttributes(hwnd, win32.ColorKey, 0, win32.LwaColorKey)
 

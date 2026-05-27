@@ -7,6 +7,9 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+/*
+=========================================================================== STRUCTS ======================================================
+*/
 type Point struct{ X, Y int32 }
 
 type Rect struct {
@@ -33,6 +36,10 @@ var WMsg = Messages{
 	WmTimer:   0x0113,
 }
 
+type Options struct {
+	FPS           int
+	UseClientRect bool
+}
 type PaintStruct struct {
 	Hdc       uintptr
 	Erase     int32
@@ -57,7 +64,15 @@ type WndClassEx struct {
 	iconSmall  windows.Handle // pointer to a small incon associated with the window class
 }
 
+/*
+================================================================================= CONSTANTS =================================================
+*/
 const className = "veil_overlay_class"
+const CLR_INVALID = 0xFFFFFFFF
+const (
+	BK_TRANSPARENT = 1
+	BK_OPAQUE      = 2
+)
 
 var (
 	user32DLL                      = windows.NewLazyDLL("user32.DLL")
@@ -87,7 +102,28 @@ var (
 	procSetLayeredWindowAttributes = user32DLL.NewProc("SetLayeredWindowAttributes")
 	procSetWindowPos               = user32DLL.NewProc("SetWindowPos")
 	procCreatePen                  = gdiDLL.NewProc("CreatePen")
+	procDrawText                   = user32DLL.NewProc("DrawTextW")
+	procTextOut                    = gdiDLL.NewProc("TextOutW")
+	procSetBkMode                  = gdiDLL.NewProc("SetBkMode")
+	procSetTextColor               = gdiDLL.NewProc("SetTextColor")
 )
+
+func SetTextColor(hdc uintptr, color uintptr) error {
+	r, _, err := procSetTextColor.Call(hdc, color)
+
+	if r == CLR_INVALID {
+		return err
+	}
+	return nil
+}
+func SetBkMode(hdc uintptr, mode uint32) error {
+	r, _, err := procSetBkMode.Call(hdc, uintptr(mode))
+
+	if r == 0 {
+		return err
+	}
+	return nil
+}
 
 func SetWindowPos(hwnd, hwndInsertAfter uintptr, x, y, w, h int, flags uint32) {
 	procSetWindowPos.Call(
@@ -114,6 +150,14 @@ func DeleteObject(hObj uintptr) error {
 func CreatePen(color uintptr, width int) uintptr {
 	pen, _, _ := procCreatePen.Call(0, uintptr(width), color)
 	return pen
+}
+func TextOut(hdc uintptr, text *uint16, length uint32, x, y int32) {
+	textPtr := unsafe.Pointer(text)
+	procTextOut.Call(hdc,
+		uintptr(x),
+		uintptr(y),
+		uintptr(textPtr),
+		uintptr(length))
 }
 
 func SelectObject(hdc, obj uintptr) uintptr {
@@ -180,7 +224,21 @@ func BeginPaint(hWnd windows.HWND, paint *PaintStruct) (uintptr, error) {
 
 	return hdc, nil
 }
+func DrawText(hdc uintptr, text *uint16, length uint32, rect *Rect, format uint32) error {
+	ret, _, err := procDrawText.Call(
+		hdc,
+		uintptr(unsafe.Pointer(text)),
+		uintptr(length),
+		uintptr(unsafe.Pointer(&rect)),
+		uintptr(format),
+	)
 
+	if ret == 0 {
+		return err
+	}
+
+	return nil
+}
 func EndPaint(hWnd windows.HWND, paint *PaintStruct) {
 	procEndPaint.Call(uintptr(hWnd), uintptr(unsafe.Pointer(paint)))
 }
