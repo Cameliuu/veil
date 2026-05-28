@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/Cameliuu/veil/draw"
-	"github.com/Cameliuu/veil/win32"
 	"github.com/Cameliuu/veil/window"
 )
 
@@ -13,12 +12,7 @@ var frameCount int
 func callback(hdc uintptr) {
 	frameCount++
 
-	draw.Box3D(hdc, win32.Rect{
-		Left:   60,
-		Top:    120,
-		Right:  300,
-		Bottom: 200,
-	}, draw.Red, 10)
+	draw.Circle(hdc, 1920/2, 1080/2, 50, draw.Red)
 }
 func main() {
 	w, err := window.New("Counter-Strike")

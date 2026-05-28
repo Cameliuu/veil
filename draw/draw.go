@@ -67,7 +67,18 @@ func Box(hdc uintptr, rect win32.Rect, c Color) {
 		log.Printf("Could not draw box: %v", err)
 	}
 }
+func Circle(hdc uintptr, cx, cy, radius int, c Color) {
+	pen := win32.CreatePen(c.ToBGR(), 1)
+	defer win32.DeleteObject(pen)
+	oldPen := win32.SelectObject(hdc, pen)
+	defer win32.SelectObject(hdc, oldPen)
 
+	nullBrush := win32.GetNullBrush()
+	oldBrush := win32.SelectObject(hdc, nullBrush)
+	defer win32.SelectObject(hdc, oldBrush)
+
+	win32.Ellipse(hdc, cx-radius, cy-radius, cx+radius, cy+radius)
+}
 func TextOut(hdc uintptr, text string, x, y int32, Color Color) {
 	err := win32.SetBkMode(hdc, win32.BK_TRANSPARENT)
 

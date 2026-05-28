@@ -108,8 +108,18 @@ var (
 	procSetTextColor               = gdiDLL.NewProc("SetTextColor")
 	procLineTo                     = gdiDLL.NewProc("LineTo")
 	procMoveToEx                   = gdiDLL.NewProc("MoveToEx")
+	procEllipse                    = gdiDLL.NewProc("Ellipse")
 )
 
+func Ellipse(hdc uintptr, left, top, right, bottom int) {
+	procEllipse.Call(
+		hdc,
+		uintptr(left),
+		uintptr(top),
+		uintptr(right),
+		uintptr(bottom),
+	)
+}
 func MoveToEx(hdc uintptr, point Point) error {
 	r, _, err := procMoveToEx.Call(
 		hdc,
